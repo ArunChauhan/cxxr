@@ -31,7 +31,7 @@ SOURCES_C = complex.c inlined.c radixsort.c \
 	g_alab_her.c g_cntrlify.c g_fontdb.c g_her_glyph.c
 
 SOURCES_CXX = \
-	ArgList.cpp ArgMatcher.cpp \
+	allocstats.cpp ArgList.cpp ArgMatcher.cpp \
 	BinaryFunction.cpp Browser.cpp BuiltInFunction.cpp \
 	CellPool.cpp Closure.cpp \
 	ClosureContext.cpp CommandChronicle.cpp CommandLineArgs.cpp \
@@ -53,7 +53,7 @@ SOURCES_CXX = \
         RealVector.cpp Renviron.cpp ReturnBailout.cpp \
         S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp \
 	StackChecker.cpp \
-        StdFrame.cpp String.cpp StringVector.cpp Subscripting.cpp Symbol.cpp \
+        String.cpp StringVector.cpp Subscripting.cpp Symbol.cpp \
 	UnaryFunction.cpp \
         VectorBase.cpp \
         WeakRef.cpp \

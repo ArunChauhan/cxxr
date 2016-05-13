@@ -103,10 +103,10 @@
 #include <Internal.h>
 #include <R_ext/Callbacks.h>
 #include "rho/ClosureContext.hpp"
+#include "rho/ListFrame.hpp"
 #include "rho/ListVector.hpp"
 #include "rho/Promise.hpp"
 #include "rho/ProvenanceTracker.hpp"
-#include "rho/StdFrame.hpp"
 #include "rho/StringVector.hpp"
 
 using namespace rho;
@@ -201,7 +201,7 @@ SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
 {
     int nsize = asInteger(size);
     GCStackRoot<Environment> enc(SEXP_downcast<Environment*>(enclos));
-    GCStackRoot<Frame> frame(new StdFrame(nsize));
+    GCStackRoot<Frame> frame(new ListFrame);
     return new Environment(enc, frame);
 }
 
@@ -469,7 +469,7 @@ namespace {
 
 static SEXP
 findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
-	     Rboolean doGet)
+             bool doGet)
 {
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
@@ -875,7 +875,7 @@ SEXP attribute_hidden do_get(/*const*/ rho::Expression* call, const rho::BuiltIn
 	error(_("invalid '%s' argument"), "inherits");
 
     /* Search for the object */
-    rval = findVar1mode(t1, genv, gmode, ginherits, RHOCONSTRUCT(Rboolean, op->variant()));
+    rval = findVar1mode(t1, genv, gmode, ginherits, op->variant());
     if (rval == R_MissingArg)
 	error(_("argument \"%s\" is missing, with no default"),
 	      CHAR(PRINTNAME(t1)));
@@ -923,7 +923,7 @@ static SEXP gfind(const char *name, SEXP env, SEXPTYPE mode,
     t1 = install(name);
 
     /* Search for the object - last arg is 1 to 'get' */
-    rval = findVar1mode(t1, env, mode, inherits, RHO_TRUE);
+    rval = findVar1mode(t1, env, mode, inherits, true);
 
     if (rval == R_UnboundValue) {
 	if( isFunction(ifnotfound) ) {
@@ -1168,7 +1168,7 @@ SEXP attribute_hidden do_attach(/*const*/ rho::Expression* call, const rho::Buil
     StringVector* name = SEXP_downcast<StringVector*>(name_);
 
     if (isNewList(what_)) {
-	GCStackRoot<Frame> frame(new StdFrame);
+	GCStackRoot<Frame> frame(new ListFrame);
 	GCStackRoot<Environment> newenv(new Environment(nullptr, frame));
 
 	const ListVector* elements = SEXP_downcast<ListVector*>(what_);

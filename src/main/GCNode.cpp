@@ -39,7 +39,6 @@
 #include "rho/GCManager.hpp"
 #include "rho/GCRoot.hpp"
 #include "rho/GCStackFrameBoundary.hpp"
-#include "rho/GCStackRoot.hpp"
 #include "rho/ProtectStack.hpp"
 #include "rho/RAllocStack.hpp"
 #include "rho/WeakRef.hpp"
@@ -54,11 +53,17 @@ using namespace rho;
 vector<const GCNode*>* GCNode::s_moribund = 0;
 unsigned int GCNode::s_num_nodes = 0;
 bool GCNode::s_on_stack_bits_correct = false;
+
+// Used to update reference count bits of a GCNode. The array element at index
+// n+1 is XORed with the current rcmms bits to compute the updated reference
+// count n+1.  This does not overflow the reference count bits and preserves
+// the other bits in m_rcmms.
 const unsigned char GCNode::s_decinc_refcount[]
 = {0,    2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
    0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x3e,
    0x3e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
    0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 0,    0};
+
 unsigned char GCNode::s_mark = 0;
 
 #ifdef HAVE_ADDRESS_SANITIZER
@@ -119,13 +124,13 @@ HOT_FUNCTION void* GCNode::operator new(size_t bytes)
     return result;
 }
 
-GCNode::GCNode(CreateAMinimallyInitializedGCNode*) : m_rcmms(0) {
-    incRefCount(this);
+GCNode::GCNode(CreateAMinimallyInitializedGCNode*) : m_rcmms(s_decinc_refcount[1]) {
 }
 
 void GCNode::operator delete(void* p, size_t bytes)
 {
     MemoryBank::notifyDeallocation(bytes);
+
 #ifdef HAVE_ADDRESS_SANITIZER
     asan_free(p);
 #else
